@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from '../schemas/user.schema';
+import { User, UserDocument } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import * as CryptoJS from 'crypto-js';
-import { RegisterDto } from '../dtos/register.dto';
+import { RegisterDto } from './dtos/register.dto';
 
 @Injectable()
 export class UserService {
@@ -25,5 +25,26 @@ export class UserService {
       return true;
     }
     return false;
+  }
+
+  async getUserByLoginAndPassword(
+    email: string,
+    password: string,
+  ): Promise<UserDocument | null> {
+    const result = await this.userModel.find({ email });
+
+    if (result && result.length > 0) {
+      const user = result[0] as UserDocument;
+      const bytes = CryptoJS.AES.decrypt(
+        user.password,
+        process.env.USER_CYPHER_SECRET_KEY,
+      );
+      
+      const savedPassword = bytes.toString(CryptoJS.enc.Utf8);
+
+      if (password === savedPassword) return user;
+    }
+
+    return null;
   }
 }

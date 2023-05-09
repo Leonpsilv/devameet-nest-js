@@ -2,24 +2,40 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { LoginDto } from './dtos/login.dto';
 import { MessagesHelper } from './helpers/messages.helper';
 import { RegisterDto } from 'src/user/dtos/register.dto';
-import { UserService } from 'src/user/services/user.service';
+import { UserService } from 'src/user/user.service';
 import { UserMessagesHelper } from 'src/user/helpers/messages.helper';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   private logger = new Logger(AuthService.name);
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  login(dto: LoginDto) {
+  async login(dto: LoginDto) {
     this.logger.debug('login - started');
-    if (dto.login !== 'teste@teste.com' || dto.password !== 'senha123') {
+    const user = await this.userService.getUserByLoginAndPassword(
+      dto.login,
+      dto.password,
+    );
+
+    if (user == null) {
       throw new BadRequestException(
         MessagesHelper.AUTH_PASSWORD_OR_EMAIL_NOT_FOUND,
       );
     }
 
-    return dto;
+    const payload = { email: user.email, sub: user._id };
+    return {
+      email: user.email,
+      name: user.name,
+      token: this.jwtService.sign(payload, {
+        secret: process.env.JWT_SECRET_KEY,
+      }),
+    };
   }
 
   async register(dto: RegisterDto) {
