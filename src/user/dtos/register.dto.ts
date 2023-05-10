@@ -6,7 +6,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserMessagesHelper } from '../helpers/messages.helper';
+import { UserMessagesHelper } from '../helpers/userMessages.helper';
 
 export class RegisterDto {
   @MinLength(2, { message: UserMessagesHelper.REGISTER_NAME_NOT_FOUND })

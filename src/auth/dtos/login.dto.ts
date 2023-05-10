@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty } from 'class-validator';
-import { MessagesHelper } from '../helpers/messages.helper';
+import { MessagesHelper } from '../helpers/authMessages.helper';
 
 export class LoginDto {
   @IsEmail({}, { message: MessagesHelper.AUTH_LOGIN_NOT_FOUND })

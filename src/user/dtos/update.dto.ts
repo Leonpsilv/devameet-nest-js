@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { UserMessagesHelper } from '../helpers/messages.helper';
+import { UserMessagesHelper } from '../helpers/userMessages.helper';
 
 export class UpdateDto {
   @IsNotEmpty({ message: UserMessagesHelper.REGISTER_NAME_NOT_FOUND })

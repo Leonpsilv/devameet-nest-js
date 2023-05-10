@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserMessagesHelper } from './helpers/messages.helper';
+import { UserMessagesHelper } from './helpers/userMessages.helper';
 import { UpdateDto } from './dtos/update.dto';
 
 @Controller('user')
