@@ -1,6 +1,16 @@
-import { Controller, Get, Request, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Request,
+  BadRequestException,
+  Put,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserMessagesHelper } from './helpers/messages.helper';
+import { UpdateDto } from './dtos/update.dto';
 
 @Controller('user')
 export class UserController {
@@ -12,7 +22,8 @@ export class UserController {
 
     const result = await this.userService.getUserById(userId);
 
-    if(!result) throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND)
+    if (!result)
+      throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
 
     return {
       name: result.name,
@@ -20,5 +31,12 @@ export class UserController {
       avatar: result.avatar,
       id: result._id.toString(),
     };
+  }
+
+  @Put()
+  @HttpCode(HttpStatus.OK)
+  async updateUser(@Request() req, @Body() dto: UpdateDto) {
+    const { userId } = req?.user;
+    const updatedUser = await this.userService.updateUser(userId, dto);
   }
 }
