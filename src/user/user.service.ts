@@ -39,12 +39,16 @@ export class UserService {
         user.password,
         process.env.USER_CYPHER_SECRET_KEY,
       );
-      
+
       const savedPassword = bytes.toString(CryptoJS.enc.Utf8);
 
       if (password === savedPassword) return user;
     }
 
     return null;
+  }
+
+  async getUserById(id: string) {
+    return await this.userModel.findById(id);
   }
 }
