@@ -6,8 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Meet, MeetSchema } from './schemas/meet.schema';
 import { MeetObject, MeetObjectSchema } from './schemas/meetObject.schema';
 
-console.log(Meet.name);
-
 @Module({
   imports: [
     UserModule,
