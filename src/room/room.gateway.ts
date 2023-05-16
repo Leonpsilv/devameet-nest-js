@@ -34,17 +34,19 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
 
   async handleDisconnect(client: any) {
     const existingOnSocket = this.activeSockets.find(
-      socket => socket.id === client.id
+      (socket) => socket.id === client.id,
     );
 
     if (!existingOnSocket) return;
 
     this.activeSockets = this.activeSockets.filter(
-      socket => socket.id !== client.id
+      (socket) => socket.id !== client.id,
     );
 
     await this.roomService.deleteUsersPosition(client.id);
-    client.broadcast.emit(`${existingOnSocket.room}-remove-user`, { socketId: client.id });
+    client.broadcast.emit(`${existingOnSocket.room}-remove-user`, {
+      socketId: client.id,
+    });
 
     this.logger.debug(`Client: ${client.id} disconnected`);
   }
@@ -59,11 +61,37 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
     if (!existingOnSocket) {
       this.activeSockets.push({ room: link, id: client.id, userId });
 
+      const positions = await this.roomService.getUsersPosition({
+        link,
+        userId,
+      });
+
+      const getusedPosition = (array: any[], key) => {
+        const allPositions = array.map((p) => p[key]);
+        return allPositions.filter(
+          (value, i) => allPositions.indexOf(value) === i,
+        );
+      };
+
+      const usedPostitions = {
+        x: getusedPosition(positions, 'x'),
+        y: getusedPosition(positions, 'y'),
+      };
+
+      const freePositions = {
+        x: [2, 3, 4, 5, 6, 7, 8, 1, 0].filter(
+          (v, i) => usedPostitions.x.indexOf(v) === -1,
+        ),
+        y: [2, 3, 4, 5, 6, 7, 8, 1, 0].filter(
+          (v, i) => usedPostitions.y.indexOf(v) === -1,
+        ),
+      };
+
       const dto = {
         link,
         userId,
-        x: 2,
-        y: 2,
+        x: freePositions.x[0] || 2,
+        y: freePositions.y[0] || 2,
         orientation: 'down',
       } as UpdatePositionDto;
 
@@ -109,7 +137,7 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
     this.logger.debug(`callUser: ${client.id} to: ${data.to}`);
     client.to(data.to).emit('call-made', {
       offer: data.offer,
-      socket: client.id
+      socket: client.id,
     });
   }
 
@@ -118,7 +146,7 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
     this.logger.debug(`makeAnswer: ${client.id} to: ${data.to}`);
     client.to(data.to).emit('answer-made', {
       answer: data.answer,
-      socket: client.id
+      socket: client.id,
     });
   }
 }

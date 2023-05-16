@@ -11,6 +11,7 @@ import { UserService } from 'src/user/user.service';
 import { RoomMessagesHelper } from './helpers/rommMessages.helper';
 import { UpdatePositionDto } from './dtos/updatePosition.dto';
 import { ToggleMuteDto } from './dtos/toggleMuted.dto';
+import { JoinRoomDto } from './dtos/joinRoom.dto';
 
 @Injectable()
 export class RoomService {
@@ -98,6 +99,24 @@ export class RoomService {
 
       await this.positionModel.create(position);
     }
+  }
+
+  async getUsersPosition(dto: JoinRoomDto) {
+    const meet = await this._getMeet(dto.link);
+    const user = await this.userService.getUserById(dto.userId);
+    if (!user) {
+      throw new BadRequestException(RoomMessagesHelper.JOIN_USER_NOT_VALID);
+    }
+
+    const usersInRoom = await this.positionModel.find({ meet });
+    const positions = usersInRoom.map((user) => {
+      return {
+        x: user.x,
+        y: user.y,
+      };
+    });
+
+    return positions;
   }
 
   async updateUserMute(dto: ToggleMuteDto) {
