@@ -61,12 +61,12 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
     if (!existingOnSocket) {
       this.activeSockets.push({ room: link, id: client.id, userId });
 
-      const positions = await this.roomService.getUsersPosition({
+      const usersPositions = await this.roomService.getUsersPosition({
         link,
         userId,
       });
 
-      const getusedPosition = (array: any[], key) => {
+      const getUsedPosition = (array: any[], key) => {
         const allPositions = array.map((p) => p[key]);
         return allPositions.filter(
           (value, i) => allPositions.indexOf(value) === i,
@@ -74,8 +74,8 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
       };
 
       const usedPostitions = {
-        x: getusedPosition(positions, 'x'),
-        y: getusedPosition(positions, 'y'),
+        x: getUsedPosition(usersPositions, 'x'),
+        y: getUsedPosition(usersPositions, 'y'),
       };
 
       const freePositions = {
@@ -87,11 +87,32 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
         ),
       };
 
+      const getFreePosition = () => {
+        const freeSlot = {
+          x: 2,
+          y: 2,
+        };
+
+        if (freePositions.x.length === 0 && freePositions.x.length === 0) {
+          freeSlot.x = 3;
+        } else {
+          if (freePositions.x && freePositions.x.length > 0) {
+            freeSlot.x = freePositions.x[0];
+          } else {
+            freeSlot.y = freePositions.y[0];
+          }
+        }
+
+        return freeSlot;
+      };
+
+      const freeSlot = getFreePosition();
+
       const dto = {
         link,
         userId,
-        x: freePositions.x[0] || 2,
-        y: freePositions.y[0] || 2,
+        x: freeSlot.x,
+        y: freeSlot.y,
         orientation: 'down',
       } as UpdatePositionDto;
 
