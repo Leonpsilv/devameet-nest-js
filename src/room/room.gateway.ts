@@ -60,53 +60,67 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
 
     if (!existingOnSocket) {
       this.activeSockets.push({ room: link, id: client.id, userId });
-
+      
       const usersPositions = await this.roomService.getUsersPosition({
         link,
         userId,
       });
-
-      const getUsedPosition = (array: any[], key) => {
+  
+      function getUsedPosition(array: any[], key: string) {
         const allPositions = array.map((p) => p[key]);
-        return allPositions.filter(
-          (value, i) => allPositions.indexOf(value) === i,
-        );
-      };
-
+        return allPositions;
+      }
+      
       const usedPostitions = {
         x: getUsedPosition(usersPositions, 'x'),
         y: getUsedPosition(usersPositions, 'y'),
       };
 
-      const freePositions = {
-        x: [2, 3, 4, 5, 6, 7, 8, 1, 0].filter(
-          (v, i) => usedPostitions.x.indexOf(v) === -1,
-        ),
-        y: [2, 3, 4, 5, 6, 7, 8, 1, 0].filter(
-          (v, i) => usedPostitions.y.indexOf(v) === -1,
-        ),
-      };
-
-      const getFreePosition = () => {
-        const freeSlot = {
-          x: 2,
-          y: 2,
-        };
-
-        if (freePositions.x.length === 0 && freePositions.x.length === 0) {
-          freeSlot.x = 3;
-        } else {
-          if (freePositions.x && freePositions.x.length > 0) {
-            freeSlot.x = freePositions.x[0];
-          } else {
-            freeSlot.y = freePositions.y[0];
+      function mergeArrays (array1 : any[], array2: any[]) {
+        const result = []
+        if(array1.length === array2.length) {
+          for (let index = 0; index < array1.length; index++) {
+            const array = []
+            array.push(array1[index])
+            array.push(array2[index])
+            result.push(array)
           }
         }
+        return result
+      }
 
-        return freeSlot;
-      };
+      const usedPostitionsInArray = mergeArrays(usedPostitions.x, usedPostitions.y)
 
-      const freeSlot = getFreePosition();
+      function testSlot (slot: {x: number, y: number}) : boolean {
+        for (let index = 0; index < usedPostitionsInArray.length; index++) {
+          const t = usedPostitionsInArray[index]
+          if(slot.x === t[0] && slot.y === t[1]) return false
+        }
+        return true
+      }
+
+      function getFreePositions() {
+        const options = [2, 3, 4, 5, 6, 7, 8, 1, 0];
+        const slot = {
+          x: options[0],
+          y: options[0],
+        };
+        for (let indexY = 0; indexY < options.length; indexY++) {
+          slot.y = options[indexY];
+          for (let indexX = 0; indexX < options.length; indexX++) {
+            slot.x = options[indexX];
+            if (
+                (usedPostitions.x[indexX] === slot.x && usedPostitions.y[indexX] !== slot.y) ||
+                (usedPostitions.y[indexX] === slot.y && usedPostitions.x[indexX] !== slot.x) ||
+                (usedPostitions.y[indexX] !== slot.y && usedPostitions.x[indexX] !== slot.x)
+              ) {
+                if(testSlot(slot)) return slot
+            }
+          }
+        }
+      }
+
+      const freeSlot = getFreePositions();
 
       const dto = {
         link,
