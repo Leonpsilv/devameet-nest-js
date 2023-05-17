@@ -6,6 +6,7 @@ import { UserModule } from 'src/user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Position, PositionSchema } from './schemas/position.schema';
 import { RoomGateway } from './room.gateway';
+import { PositionHistoric, PositionHistoricSchema } from './schemas/positionHistoric.schema';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { RoomGateway } from './room.gateway';
     UserModule,
     MongooseModule.forFeature([
       { name: Position.name, schema: PositionSchema },
+      { name: PositionHistoric.name, schema: PositionHistoricSchema },
     ]),
   ],
   providers: [RoomService, RoomGateway],

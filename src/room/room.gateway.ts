@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { JoinRoomDto } from './dtos/joinRoom.dto';
 import { UpdatePositionDto } from './dtos/updatePosition.dto';
 import { ToggleMuteDto } from './dtos/toggleMuted.dto';
+import { UpdatePositionHistoricDto } from './dtos/updatePositionHistoric.dto';
 
 type ActiveSocketType = {
   room: String;
@@ -43,6 +44,18 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
       (socket) => socket.id !== client.id,
     );
 
+    const userInRoom = await this.roomService.getUsersInRoom(client.id);
+
+    const positionHistoric = {
+      meet: userInRoom.meet.toString(),
+      user: userInRoom.user.toString(),
+      x: userInRoom.x,
+      y: userInRoom.y,
+      orientation: userInRoom.orientation,
+      muted: userInRoom.muted,
+    } as UpdatePositionHistoricDto;
+
+    await this.roomService.updateUserPositionHistoric(positionHistoric);
     await this.roomService.deleteUsersPosition(client.id);
     client.broadcast.emit(`${existingOnSocket.room}-remove-user`, {
       socketId: client.id,
@@ -60,43 +73,46 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
 
     if (!existingOnSocket) {
       this.activeSockets.push({ room: link, id: client.id, userId });
-      
+
       const usersPositions = await this.roomService.getUsersPosition({
         link,
         userId,
       });
-  
+
       function getUsedPosition(array: any[], key: string) {
         const allPositions = array.map((p) => p[key]);
         return allPositions;
       }
-      
+
       const usedPostitions = {
         x: getUsedPosition(usersPositions, 'x'),
         y: getUsedPosition(usersPositions, 'y'),
       };
 
-      function mergeArrays (array1 : any[], array2: any[]) {
-        const result = []
-        if(array1.length === array2.length) {
+      function mergeArrays(array1: any[], array2: any[]) {
+        const result = [];
+        if (array1.length === array2.length) {
           for (let index = 0; index < array1.length; index++) {
-            const array = []
-            array.push(array1[index])
-            array.push(array2[index])
-            result.push(array)
+            const array = [];
+            array.push(array1[index]);
+            array.push(array2[index]);
+            result.push(array);
           }
         }
-        return result
+        return result;
       }
 
-      const usedPostitionsInArray = mergeArrays(usedPostitions.x, usedPostitions.y)
+      const usedPostitionsInArray = mergeArrays(
+        usedPostitions.x,
+        usedPostitions.y,
+      );
 
-      function testSlot (slot: {x: number, y: number}) : boolean {
+      function testSlot(slot: { x: number; y: number }): boolean {
         for (let index = 0; index < usedPostitionsInArray.length; index++) {
-          const t = usedPostitionsInArray[index]
-          if(slot.x === t[0] && slot.y === t[1]) return false
+          const t = usedPostitionsInArray[index];
+          if (slot.x === t[0] && slot.y === t[1]) return false;
         }
-        return true
+        return true;
       }
 
       function getFreePositions() {
@@ -110,17 +126,31 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
           for (let indexX = 0; indexX < options.length; indexX++) {
             slot.x = options[indexX];
             if (
-                (usedPostitions.x[indexX] === slot.x && usedPostitions.y[indexX] !== slot.y) ||
-                (usedPostitions.y[indexX] === slot.y && usedPostitions.x[indexX] !== slot.x) ||
-                (usedPostitions.y[indexX] !== slot.y && usedPostitions.x[indexX] !== slot.x)
-              ) {
-                if(testSlot(slot)) return slot
+              (usedPostitions.x[indexX] === slot.x &&
+                usedPostitions.y[indexX] !== slot.y) ||
+              (usedPostitions.y[indexX] === slot.y &&
+                usedPostitions.x[indexX] !== slot.x) ||
+              (usedPostitions.y[indexX] !== slot.y &&
+                usedPostitions.x[indexX] !== slot.x)
+            ) {
+              if (testSlot(slot)) return slot;
             }
           }
         }
       }
 
-      const freeSlot = getFreePositions();
+      let freeSlot = getFreePositions();
+      const meet = await this.roomService._getMeet(link)
+      const userPositionHistoric = await this.roomService.getUserPositionHistoric(userId, meet._id.toString());
+      if (userPositionHistoric) {
+        const slotHistoric = {
+          x: userPositionHistoric.x,
+          y: userPositionHistoric.y,
+        };
+        if (testSlot(slotHistoric)) {
+          freeSlot = slotHistoric
+        }
+      }
 
       const dto = {
         link,

@@ -8,6 +8,10 @@ import { generateLink } from './helpers/linkGenerator.helper';
 import { MeetObject, MeetObjectDocument } from './schemas/meetObject.schema';
 import { MeetMessagesHelper } from './helpers/meetMessages.helper';
 import { UpdateMeetDto } from './dtos/updateMeet.dto';
+import {
+  PositionHistoric,
+  PositionHistoricDocument,
+} from 'src/room/schemas/positionHistoric.schema';
 
 @Injectable()
 export class MeetService {
@@ -17,6 +21,8 @@ export class MeetService {
     @InjectModel(Meet.name) private readonly model: Model<MeetDocument>,
     @InjectModel(MeetObject.name)
     private readonly objectModel: Model<MeetObjectDocument>,
+    @InjectModel(PositionHistoric.name)
+    private readonly positionHistoricModel: Model<PositionHistoricDocument>,
     private readonly userService: UserService,
   ) {}
 
@@ -41,7 +47,8 @@ export class MeetService {
 
   async deleteMeetByUser(userId: string, meetId: string) {
     this.logger.debug(`deleteMeetByUser - ${userId} - ${meetId}`);
-
+    await this.objectModel.deleteMany({ meet: meetId });
+    await this.positionHistoricModel.deleteMany({ meet: meetId });
     return await this.model.deleteOne({ user: userId, _id: meetId });
   }
 
@@ -72,6 +79,7 @@ export class MeetService {
     await this.model.findByIdAndUpdate({ _id: meetId }, meet);
 
     await this.objectModel.deleteMany({ meet });
+    await this.positionHistoricModel.deleteMany({ meet });
 
     let objectPayload: any;
 

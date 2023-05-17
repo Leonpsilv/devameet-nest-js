@@ -12,6 +12,11 @@ import { RoomMessagesHelper } from './helpers/rommMessages.helper';
 import { UpdatePositionDto } from './dtos/updatePosition.dto';
 import { ToggleMuteDto } from './dtos/toggleMuted.dto';
 import { JoinRoomDto } from './dtos/joinRoom.dto';
+import {
+  PositionHistoric,
+  PositionHistoricDocument,
+} from './schemas/positionHistoric.schema';
+import { UpdatePositionHistoricDto } from './dtos/updatePositionHistoric.dto';
 
 @Injectable()
 export class RoomService {
@@ -23,6 +28,8 @@ export class RoomService {
     private readonly objectModel: Model<MeetObjectDocument>,
     @InjectModel(Position.name)
     private readonly positionModel: Model<PositionDocument>,
+    @InjectModel(PositionHistoric.name)
+    private readonly positionHistoricModel: Model<PositionHistoricDocument>,
     private readonly userService: UserService,
   ) {}
 
@@ -63,8 +70,6 @@ export class RoomService {
   }
 
   async updateUserPosition(clientId: string, dto: UpdatePositionDto) {
-    //this.logger.debug(`listUsersPositionByLink - ${dto.link}`);
-
     const meet = await this._getMeet(dto.link);
     const user = await this.userService.getUserById(dto.userId);
 
@@ -125,5 +130,36 @@ export class RoomService {
     const meet = await this._getMeet(dto.link);
     const user = await this.userService.getUserById(dto.userId);
     await this.positionModel.updateMany({ user, meet }, { muted: dto.muted });
+  }
+
+  async getUsersInRoom(clientId: string) {
+    return await this.positionModel.findOne({ clientId });
+  }
+
+  async updateUserPositionHistoric(dto: UpdatePositionHistoricDto) {
+    const userHistory = await this.positionHistoricModel.find({
+      user: dto.user,
+      meet: dto.meet,
+    });
+
+    if (userHistory && userHistory.length > 0) {
+      await this.positionHistoricModel.findOneAndUpdate(
+        { user: dto.user, meet: dto.meet },
+        dto,
+      );
+    } else {
+      await this.positionHistoricModel.create(dto);
+    }
+  }
+
+  async getUserPositionHistoric(user: string, meet: string) {
+    return await this.positionHistoricModel.findOne({ user, meet });
+  }
+
+  async deleteAllHistorics(meet?: string, user?: string) {
+    if (meet) return await this.positionHistoricModel.deleteMany({ meet });
+    if (user) return await this.positionHistoricModel.deleteMany({ user });
+
+    throw new BadRequestException(RoomMessagesHelper.DATA_NOT_FOUND);
   }
 }
