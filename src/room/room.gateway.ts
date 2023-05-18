@@ -126,12 +126,9 @@ export class RoomGateway implements OnGatewayInit, OnGatewayDisconnect {
           for (let indexX = 0; indexX < options.length; indexX++) {
             slot.x = options[indexX];
             if (
-              (usedPostitions.x[indexX] === slot.x &&
-                usedPostitions.y[indexX] !== slot.y) ||
-              (usedPostitions.y[indexX] === slot.y &&
-                usedPostitions.x[indexX] !== slot.x) ||
-              (usedPostitions.y[indexX] !== slot.y &&
-                usedPostitions.x[indexX] !== slot.x)
+              (usedPostitions.x[indexX] === slot.x && usedPostitions.y[indexX] !== slot.y) ||
+              (usedPostitions.y[indexX] === slot.y && usedPostitions.x[indexX] !== slot.x) ||
+              (usedPostitions.y[indexX] !== slot.y && usedPostitions.x[indexX] !== slot.x)
             ) {
               if (testSlot(slot)) return slot;
             }
